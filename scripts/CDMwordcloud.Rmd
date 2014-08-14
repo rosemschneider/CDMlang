@@ -1,0 +1,45 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r}
+library(tm)
+library(ctv)
+library(wordcloud)
+library(RColorBrew)
+```
+
+----- 
+Set Path 
+```{r}
+path <- file.path(getwd(), "Documents/target")
+path 
+DirSource(path)
+
+```
+
+----
+Create Corpus 
+```{r}
+docs <-Corpus(DirSource(path))
+
+```
+
+--- 
+Data processing 
+
+```{r}
+
+dtm <-DocumentTermMatrix(docs,control=list(wordLengths=c(1,Inf))
+
+m <- as.matrix(dtm)
+v <- sort(colSums(m), decreasing=TRUE)
+head(v,14) 
+words <- names(v)
+d <- data.frame(word=words, freq=v)
+wordcloud(d$word,d$freq,min.freq=1)
+
+
+```
+

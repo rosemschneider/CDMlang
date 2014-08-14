@@ -1,0 +1,149 @@
+---
+title: "CDI_analysis"
+output: html_document
+---
+#A breakdown of the CDM First Word Survey by CDI classification of the word. Some words were omitted due to not being translatable, and some of the words were classified in an ad-hoc manner
+
+---
+#Preliminaries 
+```{r}
+library(plyr)
+library(ggplot2)
+library(reshape2)
+theme_set(theme_bw())
+df = read.csv("CDM_CDIs.csv") 
+
+```
+
+---
+#Freqs of First words - count
+```{r}
+freqs <- ddply(df, .(Word), summarise, count=length(Word))
+freqs$Word <- factor(freqs$Word, levels=with(freqs, Word[order(count, Word, decreasing = TRUE)]))
+q <- qplot(Word, count, geom="bar", stat="identity", 
+      data=subset(freqs, count>5))
+q + theme(axis.text.x = element_text(angle=90, hjust = 1))
+```
+
+#Freqs of first words props 
+```{r}
+freqs <- ddply(df, .(Word), summarise, count=length(Word))
+freqs$Word <- factor(freqs$Word, levels=with(freqs, Word[order(count, Word, decreasing = TRUE)]))
+freqs$prop <- freqs$count/sum(freqs$count)
+q <- qplot(Word, prop, geom="bar", stat="identity", 
+      data=subset(freqs, count>5))
+q + theme(axis.text.x = element_text(angle=90, hjust = 1))
+```
+---
+#Prop of first word by gender 
+```{r}
+freqs <- ddply(df, .(Word,gender), summarise, count=length(Word))
+freqs <- ddply(freqs, .(Word), mutate, total.count = sum(count))
+freqs$Word <- factor(freqs$Word, 
+                     levels=unique(with(freqs, 
+                                 Word[order(total.count, 
+                                            Word, decreasing = TRUE)])))
+freqs$prop <- freqs$count/sum(freqs$count)
+q <- qplot(Word, prop, fill=gender, 
+           position="dodge",
+           geom="bar",
+           stat="identity",
+           data=subset(freqs, total.count>5 & gender!=""))
+q + theme(axis.text.x = element_text(angle=90, hjust = 1))
+
+```
+---
+
+#Freqs of CDIs - Count
+```{r}
+freqs <- ddply(df, .(CDI_category), summarise, count=length(CDI_category))
+freqs$CDI_category <- factor(freqs$CDI_category, 
+                     levels=with(freqs, 
+                                 CDI_category[order(count, CDI_category, decreasing = TRUE)]))
+q <- qplot(CDI_category, count, geom="bar", stat="identity", 
+      data=subset(freqs))
+q + theme(axis.text.x = element_text(angle=90, hjust = 1))
+
+               
+```
+--- 
+#Proportions of CDIS 
+```{r}
+freqs <- ddply(df, .(CDI_category), summarise, count=length(CDI_category))
+freqs$CDI_category <- factor(freqs$CDI_category, 
+                     levels=with(freqs, 
+                                 CDI_category[order(count, CDI_category, decreasing = TRUE)]))
+freqs$prop <- freqs$count/sum(freqs$count)
+
+q <- qplot(CDI_category, prop, geom = "bar", stat="identity", data=subset(freqs, count>1))+theme_bw()
+q + theme(axis.text.x = element_text(angle=90, hjust = 1))
+
+
+```
+
+--- 
+#Proportions with Ages 
+```{r}
+freqs <- ddply(df, .(CDI_category, Age_utterance), summarise, count=length(CDI_category))
+freqs <- ddply(freqs, .(CDI_category), mutate, total.count=sum(count))
+freqs <- ddply(freqs, .(Age_utterance), mutate, prop = count/sum(count))
+freqs$prop <- freqs$count/sum(freqs$count)
+
+freqs$CDI_category <- factor(freqs$CDI_category, 
+                             levels=unique(with(freqs, 
+                                                CDI_category
+                                                [order(total.count, CDI_category, decreasing = TRUE)])))
+
+q <- qplot(CDI_category, prop, fill=Age_utterance, 
+      position="dodge", geom="bar", stat="identity", data=subset(freqs, total.count>1 & 
+                                                                   Age_utterance!="" &
+                                                                   Age_utterance!="dontremember"))
+
+q + theme(axis.text.x = element_text(angle=90, hjust = 1))
+
+```
+---
+#Proportions by gender 
+```{r}
+freqs <- ddply(df, .(CDI_category, gender), summarise, count=length(CDI_category))
+freqs <- ddply(freqs, .(CDI_category), mutate, total.count=sum(count))
+freqs <- ddply(freqs, .(gender), mutate, prop = count/sum(count))
+freqs$prop <- freqs$count/sum(freqs$count)
+
+freqs$CDI_category <- factor(freqs$CDI_category, 
+                             levels=unique(with(freqs, 
+                                                CDI_category
+                                                [order(total.count, CDI_category, decreasing = TRUE)])))
+
+q <- qplot(CDI_category, prop, fill=gender, 
+      position="dodge", geom="bar", stat="identity", data=subset(freqs, total.count>1 & gender!=""))
+                                                                  
+q + theme(axis.text.x = element_text(angle=90, hjust = 1))
+
+```
+--- 
+#Age Split - 10m against everyone else 
+```{r}
+df$ten <- df$Age_utterance == "10mOrBefore"
+#breaking up each age group individually, just in case we want to do something with it later 
+df$eleven <- df$Age_utterance == "11m"
+df$twelve <- df$Age_utterance == "12m"
+df$thirteen <- df$Age_utterance == "13m"
+df$fourteen <- df$Age_utterance == "14mOrLater"
+
+freqs <- ddply(df, .(CDI_category,ten), summarise, count=length(CDI_category))
+freqs <- ddply(freqs, .(CDI_category), mutate, total.count = sum(count))
+freqs <- ddply(freqs, .(ten), mutate, prop = count / sum(count))
+
+freqs$CDI_category <- factor(freqs$CDI_category,
+                             levels=unique(with(freqs, 
+                                                CDI_category[order(total.count, CDI_category, decreasing = TRUE)])))
+freqs$prop <- freqs$count/sum(freqs$count)
+
+q <- qplot(CDI_category, prop, fill=ten, 
+      position="dodge",
+      geom="bar", stat="identity", 
+      data=subset(freqs,total.count>1))
+q + theme(axis.text.x = element_text(angle=90, hjust = 1))
+```
+

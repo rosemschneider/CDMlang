@@ -1,0 +1,86 @@
+---
+title: "CDMWordGraphs"
+output: html_document
+---
+Preliminaries
+```{r}
+
+library(plyr)
+library(ggplot2)
+library(reshape2)
+theme_set(theme_bw())
+df = read.csv("CDMlangsurvey_analysis.csv") 
+
+```
+---
+Freqs of first words by count 
+```{r}
+freqs <- ddply(df, .(Word), summarise, count=length(Word))
+freqs$Word <- factor(freqs$Word, levels=with(freqs, Word[order(count, Word, decreasing = TRUE)]))
+q <- qplot(Word, count, geom="bar", stat="identity", 
+      data=subset(freqs, count>5))
+q + theme(axis.text.x = element_text(angle=90, hjust = 1))
+```
+---
+Freqs of first words by proportion 
+```{r}
+freqs <- ddply(df, .(Word), summarise, count=length(Word))
+freqs$Word <- factor(freqs$Word, levels=with(freqs, Word[order(count, Word, decreasing = TRUE)]))
+freqs$prop <- freqs$count/sum(freqs$count)
+q <- qplot(Word, prop, geom="bar", stat="identity", 
+      data=subset(freqs, count>5))
+q + theme(axis.text.x = element_text(angle=90, hjust = 1))
+```
+---
+Freqs of Words by Gender - props
+```{r}
+freqs <- ddply(df, .(Word,gender), summarise, count=length(Word))
+freqs <- ddply(freqs, .(Word), mutate, total.count = sum(count))
+freqs$Word <- factor(freqs$Word, 
+                     levels=unique(with(freqs, 
+                                 Word[order(total.count, 
+                                            Word, decreasing = TRUE)])))
+freqs$prop <- freqs$count/sum(freqs$count)
+q <- qplot(Word, prop, fill=gender, 
+           position="dodge",
+           geom="bar",
+           stat="identity",
+           data=subset(freqs, total.count>5 & gender!=""))
+q + theme(axis.text.x = element_text(angle=90, hjust = 1))
+```
+
+---
+Freqs by age - prop
+```{r}
+freqs <- ddply(df, .(Word, Age_utterance), summarise, count=length(Word))
+freqs <- ddply(freqs, .(Word), mutate, total.count=sum(count))
+freqs <- ddply(freqs, .(Age_utterance), mutate, prop = count/sum(count))
+freqs$prop <- freqs$count/sum(freqs$count)
+
+freqs$Word <- factor(freqs$Word, 
+                             levels=unique(with(freqs, 
+                                                Word
+                                                [order(total.count, Word, decreasing = TRUE)])))
+
+q <- qplot(Word, prop, fill=Age_utterance, 
+      position="dodge", geom="bar", stat="identity", data=subset(freqs, total.count>5 & 
+                                                                   Age_utterance!="" &
+                                                                   Age_utterance!="dontremember"))
+
+q + theme(axis.text.x = element_text(angle=90, hjust = 1))
+```
+---
+Props of ages 
+```{r}
+freqs <- ddply(df, .(Age_utterance), summarise, count=length(Age_utterance))
+freqs$Age_utterance <- factor(freqs$Age_utterance, 
+                             levels=unique(with(freqs, 
+                                                Age_utterance
+                                                [order(count, Age_utterance, decreasing = TRUE)])))
+freqs$prop <- freqs$count/sum(freqs$count)
+q <- qplot(Age_utterance, prop, geom="bar", stat="identity", 
+     data=subset(freqs, count>1))
+q + theme(axis.text.x = element_text(angle=90, hjust = 1))
+```
+
+
